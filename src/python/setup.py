@@ -12,13 +12,12 @@ setup(
     name="oiio",
     version="PACKAGE_VERSION",
     description="OpenImageIO Python package",
-    url="https://github.com/fredrikaverpil/oiio-python",
+    url="https://github.com/Correct-Syntax/oiio-python",
 
     # https://pypi.org/classifiers/
     classifiers=[
-        "Programming Language :: Python :: PYTHON_VERSION",
+        "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: OS_NAME",
     ],
     packages=find_packages(exclude=[]),
     package_data={
