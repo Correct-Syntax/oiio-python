@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  python.version: ${{ matrix.python.version_major }}.${{ env.python.version_minor }}
+  python.version: 3.8
   azure.vm_image: ubuntu-18.04
   src.python: ${{ env.Agent.BuildDirectory }}/s/src/python
   src.vcpkg: ${{ env.Agent.BuildDirectory }}/s/src/vcpkg
