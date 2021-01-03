@@ -29,44 +29,49 @@ jobs:
     # Inject variables into setup.py
     - name: Inject variable values into setup.py
       run: |
-      cd $(src.python)
-      sed -i'' 's/PACKAGE_VERSION/$(oiio.version)/g' setup.py
-      sed -i'' 's/OS_NAME/$(pypackage.os_name)/g' setup.py
-      cat setup.py
+        cd ${{ env.src.python }}
+        sed -i'' 's/PACKAGE_VERSION/${{ env.oiio.version }}/g' setup.py
+        sed -i'' 's/PYTHON_VERSION/${{ env.python.version }}/g' setup.py
+        sed -i'' 's/OS_NAME/${{ env.pypackage.os_name }}/g' setup.py
+        cat setup.py
 
     # Install vcpkg prerequisites
     - name: Install prerequisites for vcpkg
       run: |
-      sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-      sudo apt-get update -y
-      sudo apt-get install g++-7 -y
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update -y
+        sudo apt-get install g++-7 -y
+      shell: bash
 
     # Install vcpkg
     - name: Install vcpkg
       run: |
-      git clone https://github.com/Microsoft/vcpkg.git
-      cd vcpkg
-      ./bootstrap-vcpkg.sh
-      ./vcpkg integrate install
-      ./vcpkg update
-      pwd
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        ./bootstrap-vcpkg.sh
+        ./vcpkg integrate install
+        ./vcpkg update
+        pwd
+      shell: bash
 
     # Install oiio
     - name: Install oiio
       run: |
-      $env:OIIO_PYTHON_VERSION = 3.8
-      cd vcpkg
-      ./vcpkg list
-      ./vcpkg install python3:x64-linux
-      ./vcpkg install pybind11:x64-linux
-      ./vcpkg install openimageio:x64-linux
-      ./vcpkg list
+        $env:OIIO_PYTHON_VERSION = "${{ env.python.version }}"
+        cd vcpkg
+        ./vcpkg list
+        ./vcpkg install python3:x64-linux
+        ./vcpkg install pybind11:x64-linux
+        ./vcpkg install openimageio:x64-linux
+        ./vcpkg list
+      shell: bash
 
     # View files from built and installed oiio
     - name: Show contents of oiio site-packages folder
       run: |
-      cd $(install.vcpkg)/installed/x64-linux/lib/python3.8/site-packages
-      ls -alh
+        cd ${{ env.install.vcpkg }}/installed/x64-linux/lib/python${{ env.python.version }}/site-packages
+        ls -alh
+      shell: bash
 
     # Copy files into Python package
     - name: Copy files into oiio Python package
@@ -75,13 +80,13 @@ jobs:
     # Build the wheel
     - name: Build wheel
       run: |
-      cd ${{ env.src.python }}
-      python -m pip install -U pip
-      pip install -U setuptools wheel
-      python setup.py bdist_wheel --python-tag=cp38 --plat-name=linux-x86_64 --dist-dir="${{ github.workspace }}"
-      cd ${{ github.workspace }}
-      ls -alh
-
+        cd ${{ env.src.python }}
+        python -m pip install -U pip
+        pip install -U setuptools wheel
+        python setup.py bdist_wheel --python-tag=cp${{ matrix.python.version_major }}${{ env.python.version_minor }} --plat-name=linux-x86_64 --dist-dir="${{ github.workspace }}"
+        cd ${{ github.workspace }}
+        ls -alh
+      shell: bash
 
     - uses: actions/upload-artifact@v2
       with:
