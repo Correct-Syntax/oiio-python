@@ -101,5 +101,3 @@ jobs:
       with:
         tag_name: ${{ env.oiio.version }}+${{ env.build.date }}
         release_name: ${{ env.oiio.version }}+${{ env.build.date }}
-
-      if: eq(github.ref, 'refs/heads/master')
