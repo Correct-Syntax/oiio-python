@@ -8,9 +8,9 @@ on:
 env:
   python.version: 3.8
   azure.vm_image: ubuntu-18.04
-  src.python: ${{ env.Agent.BuildDirectory }}/s/src/python
-  src.vcpkg: ${{ env.Agent.BuildDirectory }}/s/src/vcpkg
-  install.vcpkg: ${{ env.Agent.BuildDirectory }}/s/vcpkg
+  src.python: ${{ github.workspace }}/s/src/python
+  src.vcpkg: ${{ github.workspace }}/s/src/vcpkg
+  install.vcpkg: ${{ github.workspace }}/s/vcpkg
   oiio.version: 2.2.10
   pypackage.os_name: 'Microsoft :: POSIX :: Linux'
   build.date: 1.3.2021
