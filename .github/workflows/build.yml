@@ -1,0 +1,95 @@
+# Build openimageio for python
+
+on:
+  push:
+
+  workflow_dispatch:
+
+env:
+  python.version: ${{ matrix.python.version_major }}.${{ env.python.version_minor }}
+  azure.vm_image: ubuntu-18.04
+  src.python: ${{ env.Agent.BuildDirectory }}/s/src/python
+  src.vcpkg: ${{ env.Agent.BuildDirectory }}/s/src/vcpkg
+  install.vcpkg: ${{ env.Agent.BuildDirectory }}/s/vcpkg
+  oiio.version: 2.2.10
+  pypackage.os_name: 'Microsoft :: POSIX :: Linux'
+  build.date: 1.3.2021
+
+
+
+jobs:
+  linux:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.8"
+
+    # Inject variables into setup.py
+    - name: Inject variable values into setup.py
+      run: cd $(src.python)
+      run: sed -i'' 's/PACKAGE_VERSION/$(oiio.version)/g' setup.py
+      run: sed -i'' 's/OS_NAME/$(pypackage.os_name)/g' setup.py
+      run: cat setup.py
+
+    # Install vcpkg prerequisites
+    - name: Install prerequisites for vcpkg
+      run: sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+      run: sudo apt-get update -y
+      run: sudo apt-get install g++-7 -y
+
+
+    # Install vcpkg
+    - name: Install vcpkg
+      run: git clone https://github.com/Microsoft/vcpkg.git
+      run: cd vcpkg
+      run: ./bootstrap-vcpkg.sh
+      run: ./vcpkg integrate install
+      run: ./vcpkg update
+      run: pwd
+
+    # Install oiio
+    - name: Install oiio
+      run: $env:OIIO_PYTHON_VERSION = 3.8
+      run: cd vcpkg
+      run: ./vcpkg list
+      run: ./vcpkg install python3:x64-linux
+      run: ./vcpkg install pybind11:x64-linux
+      run: ./vcpkg install openimageio:x64-linux
+      run: ./vcpkg list
+
+    # View files from built and installed oiio
+    - name: Show contents of oiio site-packages folder
+      run: cd $(install.vcpkg)/installed/x64-linux/lib/python3.8/site-packages
+      run: ls -alh
+
+    # Copy files into Python package
+    - name: Copy files into oiio Python package
+      run: cp -r -v $(install.vcpkg)/installed/x64-linux/lib/python3.8/site-packages/*.so $(src.python)/oiio
+
+    # Build the wheel
+    - name: Build wheel
+      run: cd ${{ env.src.python }}
+      run: python -m pip install -U pip
+      run: pip install -U setuptools wheel
+      run: python setup.py bdist_wheel --python-tag=cp38 --plat-name=linux-x86_64 --dist-dir="${{ github.workspace }}"
+      run: cd ${{ github.workspace }}
+      run: ls -alh
+
+
+    - uses: actions/upload-artifact@v2
+      with:
+        path: ${{ github.workspace }}
+        name: drop-${{ env.python.version }}
+
+
+    - uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      with:
+        tag_name: ${{ env.oiio.version }}+${{ env.build.date }}
+        release_name: ${{ env.oiio.version }}+${{ env.build.date }}
+
+      if: eq(github.ref, 'refs/heads/master')
