@@ -60,7 +60,6 @@ jobs:
     # Install oiio
     - name: Install oiio
       run: |
-        $env:OIIO_PYTHON_VERSION = "${{ env.python.version }}"
         cd vcpkg
         ./vcpkg list
         ./vcpkg install python3:x64-linux
@@ -68,6 +67,9 @@ jobs:
         ./vcpkg install openimageio:x64-linux
         ./vcpkg list
       shell: bash
+      env:
+        OIIO_PYTHON_VERSION: "${{ env.python.version }}"
+
 
     # View files from built and installed oiio
     - name: Show contents of oiio site-packages folder
