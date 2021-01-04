@@ -8,9 +8,9 @@ on:
 env:
   python.version: 3.8
   azure.vm_image: ubuntu-18.04
-  src.python: ${{ github.workspace }}/s/src/python
-  src.vcpkg: ${{ github.workspace }}/s/src/vcpkg
-  install.vcpkg: ${{ github.workspace }}/s/vcpkg
+  src.python: ${{ GITHUB_WORKSPACE }}/s/src/python
+  src.vcpkg: ${{ GITHUB_WORKSPACE }}/s/src/vcpkg
+  install.vcpkg: ${{ GITHUB_WORKSPACE }}/s/vcpkg
   oiio.version: 2.2.10
   pypackage.os_name: 'Microsoft :: POSIX :: Linux'
   build.date: 1.3.2021
@@ -29,7 +29,7 @@ jobs:
     # Inject variables into setup.py
     - name: Inject variable values into setup.py
       run: |
-        cd /src/python
+        cd ${{ env.src.python }}
         sed -i'' 's/PACKAGE_VERSION/${{ env.oiio.version }}/g' setup.py
         sed -i'' 's/PYTHON_VERSION/${{ env.python.version }}/g' setup.py
         sed -i'' 's/OS_NAME/${{ env.pypackage.os_name }}/g' setup.py
