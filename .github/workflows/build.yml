@@ -32,7 +32,7 @@ jobs:
     # Inject variables into setup.py
     - name: Inject variable values into setup.py
       run: |
-        cd ${{ env.src.python}}
+        cd $GITHUB_WORKSPACE/s/src/python
         sed -i'' 's/PACKAGE_VERSION/${{ env.oiio.version }}/g' setup.py
         sed -i'' 's/PYTHON_VERSION/${{ env.python.version }}/g' setup.py
         sed -i'' 's/OS_NAME/${{ env.pypackage.os_name }}/g' setup.py
