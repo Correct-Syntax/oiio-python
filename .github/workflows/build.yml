@@ -32,7 +32,7 @@ jobs:
         cd oiio
         mkdir build
         cd build
-        cmake -DSTOP_ON_WARNING=0
+        cmake --build . --target install
 
       shell: bash
       env:
