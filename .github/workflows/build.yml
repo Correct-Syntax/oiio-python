@@ -39,6 +39,6 @@ jobs:
 
     - name: Show contents
       run: |
-        cd linux64
+        cd dist/linux64
         ls -alh
       shell: bash
