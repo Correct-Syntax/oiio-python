@@ -30,9 +30,7 @@ jobs:
         pip3 install pybind11
         pip3 install numpy
         cd oiio
-        mkdir build
-        cd build
-        cmake --build . --target install
+        make
 
       shell: bash
       env:
