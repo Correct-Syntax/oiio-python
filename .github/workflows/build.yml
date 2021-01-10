@@ -20,7 +20,6 @@ jobs:
     # Build oiio
     - name: Build oiio
       run: |
-        sudo apt update
         sudo apt-get install libboost-all-dev
         sudo apt-get install libjpeg-dev
         sudo apt-get install zlib1g-dev
@@ -28,9 +27,18 @@ jobs:
         sudo apt-get install libtiff-dev
         sudo apt-get install libopenexr-dev
         git clone https://github.com/OpenImageIO/oiio.git --branch 2.2.10.1
+        pip3 install pybind11
+        pip3 install numpy
         cd build
         cmake -DSTOP_ON_WARNING=0
 
       shell: bash
       env:
         OIIO_PYTHON_VERSION: "3.8"
+
+
+    - name: Show contents
+      run: |
+        cd dist/PLATFORM
+        ls -alh
+      shell: bash
