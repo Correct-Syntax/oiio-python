@@ -29,7 +29,9 @@ jobs:
         git clone https://github.com/OpenImageIO/oiio.git
         pip3 install pybind11
         pip3 install numpy
-        cd oiio/build
+        cd oiio
+        mkdir build
+        cd build
         cmake -DSTOP_ON_WARNING=0
 
       shell: bash
