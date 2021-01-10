@@ -27,7 +27,6 @@ jobs:
         sudo apt-get install libtiff-dev
         sudo apt-get install libopenexr-dev
         git clone https://github.com/OpenImageIO/oiio.git
-        pip3 install pybind11
         pip install "pybind11[global]"
         pip3 install numpy
         cd oiio
@@ -40,6 +39,6 @@ jobs:
 
     - name: Show contents
       run: |
-        cd dist/PLATFORM
+        cd linux64
         ls -alh
       shell: bash
