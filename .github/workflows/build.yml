@@ -28,6 +28,7 @@ jobs:
         sudo apt-get install libopenexr-dev
         git clone https://github.com/OpenImageIO/oiio.git
         pip3 install pybind11
+        pip install "pybind11[global]"
         pip3 install numpy
         cd oiio
         make
