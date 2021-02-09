@@ -6,6 +6,12 @@ OpenImageIO Python 3.x package to provide wheels for Linux. Friendly fork of [oi
 
 Not working, yet. :(
 
+## Method
+
+Purely done by *trial-and-error* in hopes that eventually oiio python wheels for Linux will exist. ;)
+
+Feel free to tell me what I am doing wrong...or right with this. Or, better yet: **let me know if you have an idea of how to build python wheels for oiio.**
+
 ## Usage
 
 - Install the wheel: `pip install ...`
