@@ -39,6 +39,5 @@ jobs:
 
     - name: Show contents
       run: |
-        cd dist
         ls -alh
       shell: bash
