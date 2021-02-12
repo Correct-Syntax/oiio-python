@@ -1,44 +1,129 @@
 # Build openimageio for python
 
 on:
-  push:
+  pull_request:
+    branches:
+      - release
+  release:
+    types: [published]
 
-  workflow_dispatch:
 
 
 jobs:
-
-  linux:
-    runs-on: ubuntu-20.04
-
+  build:
+    name: Test on ${{ matrix.os }} with Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version_major: ['3']
+        python_version_minor: ['7']
+        os: ['ubuntu-16.04']
+        oiio_version: ["2.2.10.0"]
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: "3.8"
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version_major }}.${{ matrix.python_version_minor }}
+          architecture: x64
+      - name: build oiio
+        run: |
+          sudo apt-get install libboost-all-dev
+          sudo apt-get install libjpeg-dev
+          sudo apt-get install zlib1g-dev
+          sudo apt-get install libpng-dev
+          sudo apt-get install libtiff-dev
+          sudo apt-get install libopenexr-dev
+          sudo apt-get install libraw-dev
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update -y
+          sudo apt-get install g++-7 -y
+          git clone https://github.com/OpenImageIO/oiio.git
+          pip3 install "pybind11[global]"
+          pip3 install numpy
+          cd oiio
+          git checkout "v${{ matrix.oiio_version }}"
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_CXX_FLAGS="-Wno-error=unused-variable"
+          make VERBOSE=1 STOP_ON_WARNING=0 LINKSTATIC=1
+          sudo make install
+        shell: bash
+        env:
+          OIIO_PYTHON_VERSION: ${{ matrix.python_version_major }}.${{ matrix.python_version_minor }}
 
-    # Build oiio
-    - name: Build oiio
-      run: |
-        sudo apt-get install libboost-all-dev
-        sudo apt-get install libjpeg-dev
-        sudo apt-get install zlib1g-dev
-        sudo apt-get install libpng-dev
-        sudo apt-get install libtiff-dev
-        sudo apt-get install libopenexr-dev
-        git clone https://github.com/OpenImageIO/oiio.git
-        pip install "pybind11[global]"
-        pip3 install numpy
-        cd oiio
-        make
-
-      shell: bash
-      env:
-        OIIO_PYTHON_VERSION: "3.8"
-
-
-    - name: Show contents
-      run: |
-        cd ../
-        ls -alh
-      shell: bash
+      - name: Inject variable values into setup.py
+        run: |
+          cd src/python
+          sed -i'' 's/PACKAGE_VERSION/${{ matrix.oiio_version }}/g' setup.py
+          sed -i'' 's/PYTHON_VERSION/${{ matrix.python_version_major }}.${{ matrix.python_version_minor }}/g' setup.py
+          sed -i'' 's/OS_NAME/Microsoft :: POSIX :: Linux/g' setup.py
+          cat setup.py
+          mkdir ${GITHUB_WORKSPACE}/artifacts
+      - name: Copy files into oiio Python package
+        run: |
+          cp oiio/build/lib/python/site-packages/*.so src/python/oiio
+      # - name: Python wheels manylinux build
+      #   uses: RalfG/python-wheels-manylinux-build@v0.3.3
+      #   with:
+      #     python-versions: 'cp37-cp37m'
+      #     package-path: 'src/python'
+      #     pip-wheel-args: '-w /github/workspace/artifacts'
+      - name: Copy Files To Zip
+        run: |
+          SOURCE="oiio/build"
+          DEST="${GITHUB_WORKSPACE}/artifacts"
+          INSTALL_ROOT="/usr/local"
+          if [ ! -d $DEST ]; then
+              mkdir $DEST
+          fi
+          for root in $SOURCE/bin $SOURCE/lib $SOURCE/include; do
+              for file in $(find $root -type f ); do
+                  echo "$file"
+                  src_file="${file/$SOURCE/}"
+                  if [ -f $INSTALL_ROOT/$src_file ]; then
+                      echo "$INSTALL_ROOT/$src_file  -> $DEST"
+                      cp $INSTALL_ROOT/$src_file --parents $DEST
+                  fi
+              done
+          done
+          mkdir -p $DEST/lib/python3.7/site-packages
+          if [ -f $INSTALL_ROOT/lib/python3.7/site-packages/OpenImageIO.so ]; then
+              cp $INSTALL_ROOT/lib/python3.7/site-packages/OpenImageIO.so $DEST/lib/python3.7/site-packages/OpenImageIO.so
+          else
+            cp oiio/build/lib/python/site-packages/OpenImageIO.so $DEST/lib/python3.7/site-packages/OpenImageIO.so
+          fi
+      - name: Build wheel
+        id: build-wheel
+        run: |
+          export DIST_DIR="${GITHUB_WORKSPACE}/artifacts"
+          cd src/python
+          python${{ matrix.python_version_major }}.${{ matrix.python_version_minor }} -m pip install -U pip
+          pip${{ matrix.python_version_major }}.${{ matrix.python_version_minor }} install -U setuptools wheel auditwheel
+          python3 setup.py bdist_wheel --python-tag=cp${{ matrix.python_version_major }}${{ matrix.python_version_minor }} --plat-name=linux_x86_64 --dist-dir="$DIST_DIR"
+          cd $DIST_DIR
+          echo "Dest Dir"
+          ls -lah
+          # echo "auditwheel"
+          # auditwheel repair "oiio-${{ matrix.oiio_version }}-py${{ matrix.python_version_major }}-none-any.whl"
+          # auditwheel repair "oiio-${{ matrix.oiio_version }}-cp${{ matrix.python_version_major }}${{ matrix.python_version_minor }}-none-linux_x86_64.whl"
+          ls -lah
+          zip -r "oiio-${{ matrix.oiio_version }}-py${{ matrix.python_version_major }}.zip" ./*
+          echo ::set-output name=asset-name::oiio-${{ matrix.oiio_version }}-py${{ matrix.python_version_major }}.zip
+          echo ::set-output name=asset-path::${GITHUB_WORKSPACE}/artifacts/oiio-${{ matrix.oiio_version }}-py${{ matrix.python_version_major }}.zip
+      - name: Generate Upload URL
+        id: gen-upload-url
+        run: |
+          sudo apt-get install jq;
+          RELEASE_ID=$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH);
+          echo ::set-output name=upload-url::https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+            upload_url: ${{ steps.gen-upload-url.outputs.upload-url }}?name=${{ steps.build-wheel.outputs.asset-name }}
+            asset_path: ${{ steps.build-wheel.outputs.asset-path }}
+            asset_name: ${{ steps.build-wheel.outputs.asset-name }}
+            asset_content_type: application/zip
