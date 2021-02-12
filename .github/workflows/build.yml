@@ -7,6 +7,8 @@ on:
   release:
     types: [published]
 
+  workflow_dispatch:
+
 
 
 jobs:
@@ -17,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         python_version_major: ['3']
-        python_version_minor: ['7']
+        python_version_minor: ['8']
         os: ['ubuntu-16.04']
         oiio_version: ["2.2.10.0"]
     steps:
@@ -87,11 +89,11 @@ jobs:
                   fi
               done
           done
-          mkdir -p $DEST/lib/python3.7/site-packages
-          if [ -f $INSTALL_ROOT/lib/python3.7/site-packages/OpenImageIO.so ]; then
-              cp $INSTALL_ROOT/lib/python3.7/site-packages/OpenImageIO.so $DEST/lib/python3.7/site-packages/OpenImageIO.so
+          mkdir -p $DEST/lib/python3.8/site-packages
+          if [ -f $INSTALL_ROOT/lib/python3.8/site-packages/OpenImageIO.so ]; then
+              cp $INSTALL_ROOT/lib/python3.8/site-packages/OpenImageIO.so $DEST/lib/python3.8/site-packages/OpenImageIO.so
           else
-            cp oiio/build/lib/python/site-packages/OpenImageIO.so $DEST/lib/python3.7/site-packages/OpenImageIO.so
+            cp oiio/build/lib/python/site-packages/OpenImageIO.so $DEST/lib/python3.8/site-packages/OpenImageIO.so
           fi
       - name: Build wheel
         id: build-wheel
